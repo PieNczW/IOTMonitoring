@@ -1,0 +1,99 @@
+/* === VARIABEL WARNA (Light/Dark Mode) === */
+:root {
+    --bg-color: #f4f6f9;
+    --card-bg: #ffffff;
+    --text-color: #212529;
+    --border-color: #dee2e6;
+    --shadow: 0 4px 20px rgba(0,0,0,0.05);
+}
+
+[data-theme="dark"] {
+    --bg-color: #1a1d21;
+    --card-bg: #2c3034;
+    --text-color: #f8f9fa;
+    --border-color: #495057;
+    --shadow: 0 4px 20px rgba(0,0,0,0.3);
+}
+
+/* === GLOBAL STYLES === */
+body { font-family: 'Poppins', sans-serif; background-color: var(--bg-color); color: var(--text-color); transition: 0.3s; }
+.card { background-color: var(--card-bg); border: none; border-radius: 15px; box-shadow: var(--shadow); transition: 0.3s; color: var(--text-color); }
+.card:hover { transform: translateY(-3px); }
+.card-header { background-color: transparent; border-bottom: 1px solid var(--border-color); }
+.sensor-card-icon { font-size: 2.5rem; opacity: 0.8; }
+.table { color: var(--text-color); }
+.table-hover tbody tr:hover { color: var(--text-color); background-color: rgba(255,255,255,0.05); }
+.form-control, .form-select { background-color: var(--bg-color); border-color: var(--border-color); color: var(--text-color); }
+.form-control:focus { background-color: var(--bg-color); color: var(--text-color); }
+
+/* === CONTROL BAR (Filter & Satuan) === */
+.control-bar {
+    background-color: var(--card-bg);
+    border-radius: 12px;
+    padding: 12px 20px;
+    box-shadow: var(--shadow);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 15px;
+}
+.filter-group {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+.filter-label {
+    margin: 0;
+    white-space: nowrap;
+    font-weight: 600;
+    color: #6c757d;
+    font-size: 0.9rem;
+}
+.input-group-custom {
+    display: flex;
+    align-items: center;
+}
+.input-group-custom .form-control {
+    border-top-right-radius: 0;
+    border-bottom-right-radius: 0;
+}
+.input-group-custom .btn {
+    border-top-left-radius: 0;
+    border-bottom-left-radius: 0;
+}
+
+/* === TOGGLE BUTTON === */
+.theme-toggle { cursor: pointer; padding: 8px 12px; border-radius: 50px; background: var(--bg-color); border: 1px solid var(--border-color); }
+
+/* === PERCANTIK FILTER GRAFIK === */
+.chart-filter-group {
+    background: #f8f9fa;
+    padding: 5px;
+    border-radius: 50px;
+    border: 1px solid var(--border-color);
+    display: inline-flex;
+    gap: 5px;
+}
+
+.filter-btn {
+    border: none;
+    background: transparent;
+    padding: 6px 16px;
+    border-radius: 50px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #6c757d;
+    transition: all 0.2s ease;
+    cursor: pointer;
+}
+
+.filter-btn:hover {
+    background: rgba(0,0,0,0.05);
+    color: var(--text-color);
+}
+
+/* Warna Aktif per Sensor */
+.filter-btn.active.all { background: #343a40; color: white; box-shadow: 0 2px 5px rgba(52, 58, 64, 0.3); }
+.filter-btn.active.dht22 { background: #0d6efd; color: white; box-shadow: 0 2px 5px rgba(13, 110, 253, 0.3); }
+.filter-btn.active.dht11 { background: #0dcaf0; color: white; box-shadow: 0 2px 5px rgba(13, 202, 240, 0.3); }
+.filter-btn.active.mq135 { background: #dc3545; color: white; box-shadow: 0 2px 5px rgba(220, 53, 69, 0.3); }

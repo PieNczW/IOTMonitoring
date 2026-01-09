@@ -33,10 +33,31 @@ class SensorController extends Controller
     // 2. Fungsi untuk MENAMPILKAN data di Web (Dashboard)
     public function index()
     {
-        // Ambil 50 data terakhir (supaya grafik tidak terlalu padat)
-        $data = SensorData::latest()->take(50)->get()->sortBy('id'); // sort by id asc agar grafik urut
+        // 1. Ambil Data Realtime (50 Terakhir untuk Grafik)
+        $data = SensorData::latest()->take(50)->get()->sortBy('id');
 
-        return view('dashboard', compact('data'));
+        // 2. Ambil Data HARI INI saja untuk Statistik
+        $todayData = SensorData::whereDate('created_at', now()->today())->get();
+
+        // 3. Hitung Statistik (Cek apakah ada data hari ini?)
+        if ($todayData->count() > 0) {
+            $stats = [
+                'max_temp' => $todayData->max('temp22'), // Suhu Tertinggi
+                'min_temp' => $todayData->min('temp22'), // Suhu Terendah
+                'avg_temp' => round($todayData->avg('temp22'), 1), // Rata-rata
+                
+                'max_gas'  => $todayData->max('ppm'),
+                'avg_gas'  => round($todayData->avg('ppm'), 1),
+            ];
+        } else {
+            // Kalau belum ada data hari ini, isi 0 semua
+            $stats = [
+                'max_temp' => 0, 'min_temp' => 0, 'avg_temp' => 0,
+                'max_gas' => 0, 'avg_gas' => 0
+            ];
+        }
+
+        return view('iotmonitoring', compact('data', 'stats'));
     }
 
     public function export()

@@ -1,11 +1,19 @@
 <?php
 
-
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\SensorController;
 
-// Web route untuk menampilkan dashboard:
+/*
+|--------------------------------------------------------------------------
+| Web Routes
+|--------------------------------------------------------------------------
+*/
+
+// Rute Halaman Utama (Saat buka IP:8000)
 Route::get('/', [SensorController::class, 'index']);
-// Route untuk export data ke Excel:
+
+// Rute Dashboard (PENTING: Tambahkan ini agar Filter Tanggal jalan)
+Route::get('/dashboard', [SensorController::class, 'index']);
+
+// Rute Download Excel
 Route::get('/export-excel', [SensorController::class, 'export']);
