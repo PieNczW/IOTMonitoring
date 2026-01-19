@@ -352,3 +352,4 @@ window.addEventListener("DOMContentLoaded", (event) => {
         document.getElementById("monthWrapper").style.display = "block";
     }
 });
+

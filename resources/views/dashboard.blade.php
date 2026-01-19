@@ -211,7 +211,6 @@
                         </div>
                     </div>
                 </div>
-
                 <div class="col-md-4">
                     <div class="card text-white p-3 h-100"
                         style="background: {{ $last->ppm > 300 ? 'linear-gradient(45deg, #dc3545, #b02a37)' : ($last->ppm > 100 ? 'linear-gradient(45deg, #ffc107, #d39e00)' : 'linear-gradient(45deg, #198754, #146c43)') }}">
@@ -234,6 +233,72 @@
                 </div>
             @endif
         </div>
+
+        @if (!$isHistoryMode)  <div class="row mb-4">
+        <div class="col-12">
+            <div class="card shadow-sm border-0">
+                <div class="card-header bg-white py-3 border-bottom">
+                    <h6 class="m-0 fw-bold text-dark">
+                        <i class="fas fa-sliders-h text-primary me-2"></i> Kontrol Perangkat NodeMCU
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="row align-items-center text-center">
+                        
+                        <div class="col-md-6 mb-3 mb-md-0 border-end">
+                            <h6 class="text-uppercase fw-bold text-muted small mb-3">Mode Operasi</h6>
+                            <div class="btn-group" role="group">
+                                <button type="button" 
+                                    class="btn {{ $setting->mode == 'auto' ? 'btn-primary' : 'btn-outline-primary' }} px-4 py-2" 
+                                    onclick="updateMode('auto')">
+                                    <i class="fas fa-robot me-2"></i> OTOMATIS
+                                </button>
+                                <button type="button" 
+                                    class="btn {{ $setting->mode == 'manual' ? 'btn-danger' : 'btn-outline-danger' }} px-4 py-2" 
+                                    onclick="updateMode('manual')">
+                                    <i class="fas fa-hand-pointer me-2"></i> MANUAL
+                                </button>
+                            </div>
+                            <div class="mt-2">
+                                <small class="text-muted">Status: <strong>{{ strtoupper($setting->mode) }}</strong></small>
+                            </div>
+                        </div>
+
+                        <div class="col-md-6">
+                            <h6 class="text-uppercase fw-bold text-muted small mb-3">Kontrol Kipas (Manual)</h6>
+                            
+                            <div id="fan-wrapper" style="{{ $setting->mode == 'auto' ? 'opacity: 0.5; pointer-events: none;' : '' }}">
+                                <div class="btn-group" role="group">
+                                    <button type="button" 
+                                        class="btn {{ $setting->fan_status == 1 ? 'btn-success' : 'btn-outline-success' }} px-4 py-2" 
+                                        onclick="updateFan(1)">
+                                        <i class="fas fa-fan fa-spin me-2"></i> NYALA
+                                    </button>
+                                    <button type="button" 
+                                        class="btn {{ $setting->fan_status == 0 ? 'btn-secondary' : 'btn-outline-secondary' }} px-4 py-2" 
+                                        onclick="updateFan(0)">
+                                        <i class="fas fa-power-off me-2"></i> MATI
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div class="mt-2">
+                                @if($setting->mode == 'auto')
+                                    <small class="text-danger fst-italic">
+                                        <i class="fas fa-info-circle me-1"></i> Ubah ke mode Manual untuk mengontrol.
+                                    </small>
+                                @else
+                                    <small class="text-muted">Status Kipas: <strong>{{ $setting->fan_status ? 'MENYALA' : 'MATI' }}</strong></small>
+                                @endif
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    @endif 
 
         <div class="row mb-4 g-3">
     <div class="col-md-8">
@@ -418,6 +483,79 @@
         window.onload = function() {
             initDashboard(labels, t22, t11, gas, lastPpm);
         };
+    </script>
+    <script src="{{ asset('js/dashboard.js') }}"></script>
+    
+    <script>
+        const labels = {!! json_encode(
+            $data->pluck('created_at')->map(fn($d) => $d->timezone('Asia/Jakarta')->format($isLiveMode ? 'H:i:s' : 'd M H:i')),
+        ) !!};
+        const t22 = {!! json_encode($data->pluck('temp22')) !!};
+        const t11 = {!! json_encode($data->pluck('temp11')) !!};
+        const gas = {!! json_encode($data->pluck('ppm')) !!};
+        const lastPpm = {{ $stats['last_ppm'] ?? 0 }}; // Tambah null coalescing operator biar aman
+
+        window.onload = function() {
+            // Pastikan fungsi ini ada di dashboard.js untuk render grafik
+            if(typeof initDashboard === 'function') {
+                initDashboard(labels, t22, t11, gas, lastPpm);
+            }
+        };
+    </script>
+
+    <script>
+        function updateMode(mode) {
+            // Gunakan fetch agar lebih ringan dan modern
+            fetch("{{ route('update.settings') }}", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "X-CSRF-TOKEN": "{{ csrf_token() }}" 
+                },
+                body: JSON.stringify({ mode: mode })
+            })
+            .then(response => {
+                if (!response.ok) throw new Error("HTTP error " + response.status);
+                return response.json();
+            })
+            .then(data => {
+                if(data.success) {
+                    location.reload(); 
+                } else {
+                    alert("Gagal mengubah mode.");
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert("Terjadi kesalahan koneksi.");
+            });
+        }
+
+        function updateFan(status) {
+            fetch("{{ route('update.settings') }}", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "X-CSRF-TOKEN": "{{ csrf_token() }}"
+                },
+                body: JSON.stringify({ fan_status: status })
+            })
+            .then(response => {
+                if (!response.ok) throw new Error("HTTP error " + response.status);
+                return response.json();
+            })
+            .then(data => {
+                if(data.success) {
+                    location.reload();
+                } else {
+                    alert("Gagal mengubah status kipas.");
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert("Terjadi kesalahan koneksi.");
+            });
+        }
     </script>
 </body>
 

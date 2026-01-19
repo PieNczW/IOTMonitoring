@@ -17,3 +17,6 @@ Route::get('/dashboard', [SensorController::class, 'index']);
 
 // Rute Download Excel
 Route::get('/export-excel', [SensorController::class, 'export']);
+
+// === Untuk update fan  ===
+Route::post('/update-settings', [SensorController::class, 'updateSettings'])->name('update.settings');
