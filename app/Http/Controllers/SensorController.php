@@ -12,73 +12,73 @@ use Carbon\Carbon;
 class SensorController extends Controller
 {
     public function index(Request $request)
-    {
-        // 1. Setup Timezone
-        date_default_timezone_set('Asia/Jakarta');
+{
+    // 1. Setup Timezone
+    date_default_timezone_set('Asia/Jakarta');
+    
+    // --- CEK SIAPA YANG LOGIN ---
+    $user = auth()->user();
+    $isAdmin = $user->role === 'admin'; // True jika admin
 
-        // =================================================================
-        // FIX: AMBIL DATA TERAKHIR (REALTIME) SECARA TERPISAH
-        // Agar kartu status selalu update meski grafik kosong/filter beda
-        // =================================================================
-        $latestRealtime = SensorData::latest()->first(); 
-        
-        // Cek Status Online/Offline (30 detik timeout)
-        $isOnline = false;
-        if ($latestRealtime) {
-            $lastUpdate = Carbon::parse($latestRealtime->created_at)->timezone('Asia/Jakarta');
-            $now = Carbon::now('Asia/Jakarta');
-            $isOnline = $lastUpdate->diffInSeconds($now) < 60;
-        }
+    // --- LOGIKA DATA REALTIME ---
+    $latestRealtime = SensorData::latest()->first(); 
+    $isOnline = false;
+    if ($latestRealtime) {
+        $lastUpdate = Carbon::parse($latestRealtime->created_at)->timezone('Asia/Jakarta');
+        $now = Carbon::now('Asia/Jakarta');
+        $isOnline = $lastUpdate->diffInSeconds($now) < 60;
+    }
 
-        // 3. Ambil Input Filter
+    // --- LOGIKA FILTER (DIBATASI BERDASARKAN ROLE) ---
+    // Default values
+    $period = 'daily';
+    $dateInput = now()->format('Y-m-d');
+    $weekInput = null;
+    $monthInput = null;
+    $label = "Hari Ini (Live)";
+    $isHistoryMode = false;
+
+    // JIKA ADMIN: Boleh pakai input dari Request (Filter bebas)
+    if ($isAdmin) {
         $period = $request->input('period', 'daily');
-        $dateInput = $request->input('date');
+        $dateInput = $request->input('date', now()->format('Y-m-d'));
         $weekInput = $request->input('week');
         $monthInput = $request->input('month');
+    } 
+    // JIKA USER BIASA: Abaikan request, paksa ke default (Hari ini)
+    else {
+        // Variable tetap default seperti di atas.
+        // User tidak bisa mengubah $period atau $dateInput lewat URL.
+    }
 
-        // 4. Logika Penentuan Waktu (Untuk Grafik & Statistik)
-        $startDate = now()->startOfDay();
-        $endDate   = now()->endOfDay();
-        $label     = "Hari Ini";
-        $isHistoryMode = false;
+    // --- PROSES QUERY DATA (Sama seperti kodemu sebelumnya) ---
+    $startDate = now()->startOfDay();
+    $endDate   = now()->endOfDay();
 
-        if ($period == 'daily') {
-            if ($dateInput) {
-                $startDate = Carbon::parse($dateInput)->startOfDay();
-                $endDate   = Carbon::parse($dateInput)->endOfDay();
-                $label     = "Tanggal " . $startDate->translatedFormat('d M Y');
-                $isHistoryMode = true;
-            } else {
-                $label = "Hari Ini (Live)";
-                $dateInput = now()->format('Y-m-d');
-            }
-        } elseif ($period == 'weekly') {
-            if ($weekInput) {
-                $year = substr($weekInput, 0, 4);
-                $week = substr($weekInput, 6);
-                $startDate = Carbon::now()->setISODate($year, $week)->startOfWeek();
-                $endDate   = Carbon::now()->setISODate($year, $week)->endOfWeek();
-                $label     = "Minggu ke-" . $week;
-                $isHistoryMode = true;
-            } else {
-                $startDate = now()->startOfWeek();
-                $endDate   = now()->endOfWeek();
-                $label     = "Minggu Ini";
-                $weekInput = now()->format('Y-\WW');
-            }
-        } elseif ($period == 'monthly') {
-            if ($monthInput) {
-                $startDate = Carbon::parse($monthInput)->startOfMonth();
-                $endDate   = Carbon::parse($monthInput)->endOfMonth();
-                $label     = "Bulan " . $startDate->translatedFormat('F Y');
-                $isHistoryMode = true;
-            } else {
-                $startDate = now()->startOfMonth();
-                $endDate   = now()->endOfMonth();
-                $label     = "Bulan Ini";
-                $monthInput = now()->format('Y-m');
-            }
+    if ($period == 'daily') {
+        if ($dateInput && $dateInput != now()->format('Y-m-d')) {
+            $startDate = Carbon::parse($dateInput)->startOfDay();
+            $endDate   = Carbon::parse($dateInput)->endOfDay();
+            $label     = "Tanggal " . $startDate->translatedFormat('d M Y');
+            $isHistoryMode = true;
         }
+    } elseif ($period == 'weekly') { // Admin Only logic effectively
+        if ($weekInput) {
+            $year = substr($weekInput, 0, 4);
+            $week = substr($weekInput, 6);
+            $startDate = Carbon::now()->setISODate($year, $week)->startOfWeek();
+            $endDate   = Carbon::now()->setISODate($year, $week)->endOfWeek();
+            $label     = "Minggu ke-" . $week;
+            $isHistoryMode = true;
+        }
+    } elseif ($period == 'monthly') { // Admin Only logic effectively
+        if ($monthInput) {
+            $startDate = Carbon::parse($monthInput)->startOfMonth();
+            $endDate   = Carbon::parse($monthInput)->endOfMonth();
+            $label     = "Bulan " . $startDate->translatedFormat('F Y');
+            $isHistoryMode = true;
+        }
+    }
 
         // 5. Query Data (Untuk Grafik)
         $data = SensorData::whereBetween('created_at', [$startDate, $endDate])
@@ -139,7 +139,7 @@ class SensorController extends Controller
             'data', 'stats', 'label', 'period', 
             'dateInput', 'weekInput', 'monthInput', 
             'isOnline', 'isHistoryMode',
-            'setting', 'last' // Pastikan $last dikirim
+            'setting', 'last', 'isAdmin' 
         ));
     }
 
@@ -178,6 +178,7 @@ class SensorController extends Controller
     // --- FUNGSI UPDATE TOMBOL ---
     public function updateSettings(Request $request)
     {
+        
         $setting = DeviceSetting::first();
         if (!$setting) {
             $setting = DeviceSetting::create(['mode' => 'auto', 'fan_status' => 0]);
@@ -196,5 +197,11 @@ class SensorController extends Controller
         return response()->json(['success' => true]);
     }
 
-    public function export() { return Excel::download(new SensorExport, 'laporan_sensor.xlsx'); }
+    public function export() { 
+    // TOLAK JIKA BUKAN ADMIN
+    if (auth()->user()->role !== 'admin') {
+        abort(403, 'Anda tidak memiliki akses download laporan.');
+    }
+    return Excel::download(new SensorExport, 'laporan_sensor.xlsx');       
+    }
 }

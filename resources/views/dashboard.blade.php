@@ -92,10 +92,19 @@
                 <div class="theme-toggle" onclick="toggleTheme()">
                     <i class="fas fa-moon" id="theme-icon"></i>
                 </div>
+                <div class="d-flex align-items-center gap-3">
+    <form method="POST" action="{{ route('logout') }}">
+        @csrf
+        <button type="submit" class="btn btn-danger btn-sm rounded-pill px-3">
+            <i class="fas fa-sign-out-alt"></i> Keluar
+        </button>
+    </form>
+</div>
             </div>
         </div>
 
         <div class="control-bar mb-4">
+            @if($isAdmin)
             <form action="{{ url('/dashboard') }}" method="GET" class="d-flex flex-wrap align-items-center gap-2">
                 <div class="d-flex align-items-center">
                     <i class="fas fa-filter text-secondary me-2"></i>
@@ -138,6 +147,12 @@
                         title="Kembali ke Live Mode"><i class="fas fa-times"></i></a>
                 @endif
             </form>
+            @else
+        <div class="alert alert-primary py-2 px-3 mb-0 d-flex align-items-center" style="max-width: fit-content;">
+            <i class="fas fa-info-circle me-2"></i>
+            <strong>Mode Tamu:</strong> &nbsp;Anda hanya dapat melihat data Real-Time.
+        </div>
+        @endif
 
             <div class="d-flex align-items-center ms-auto">
                 <span class="filter-label me-2 d-none d-md-block">Satuan:</span>
@@ -299,7 +314,7 @@
         </div>
     </div>
     @endif 
-
+        
         <div class="row mb-4 g-3">
     <div class="col-md-8">
         <div class="card h-100 shadow-sm border-0">
@@ -430,6 +445,7 @@
             </div>
         </div>
 
+        @if($isAdmin)
         <div class="card mb-5">
             <div class="card-header fw-bold"><i class="fas fa-list"></i> 10 Data Terakhir dari {{ $label }}
             </div>
@@ -469,6 +485,7 @@
             </div>
         </div>
     </div>
+    @endif
 
     <script src="{{ asset('js/dashboard.js') }}"></script>
     <script>

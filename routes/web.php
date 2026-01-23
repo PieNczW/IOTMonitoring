@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\ProfileController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\SensorController;
 
@@ -9,14 +10,22 @@ use App\Http\Controllers\SensorController;
 |--------------------------------------------------------------------------
 */
 
-// Rute Halaman Utama (Saat buka IP:8000)
-Route::get('/', [SensorController::class, 'index']);
+// 1. Halaman Depan diarahkan ke Login
+Route::get('/', function () {
+    return redirect()->route('login');
+});
 
-// Rute Dashboard (PENTING: Tambahkan ini agar Filter Tanggal jalan)
-Route::get('/dashboard', [SensorController::class, 'index']);
+// 2. Grup Route yang WAJIB LOGIN (Middleware 'auth')
+Route::middleware(['auth'])->group(function () {
+    
+    // Semua user (Admin & User) bisa akses dashboard
+    Route::get('/dashboard', [SensorController::class, 'index'])->name('dashboard');
 
-// Rute Download Excel
-Route::get('/export-excel', [SensorController::class, 'export']);
+    // 3. Khusus ADMIN (Update Setting & Export Excel)
+    // Kita cek role manual di Controller nanti, atau bisa pakai middleware custom
+    Route::post('/update-settings', [SensorController::class, 'updateSettings'])->name('update.settings');
+    Route::get('/export-excel', [SensorController::class, 'export'])->name('export');
+});
 
-// === Untuk update fan  ===
-Route::post('/update-settings', [SensorController::class, 'updateSettings'])->name('update.settings');
+// Load route bawaan Breeze (Login, Register, dll)
+require __DIR__.'/auth.php';
