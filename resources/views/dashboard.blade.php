@@ -15,11 +15,9 @@
     {{-- LOGIKA UTAMA --}}
     @php
         date_default_timezone_set('Asia/Jakarta');
-        $today = date('Y-m-d'); // Tanggal hari ini (cth: 2026-01-09)
+        $today = date('Y-m-d'); 
 
-        // Live Mode AKTIF jika:
-        // 1. Input Minggu & Bulan Kosong
-        // 2. DAN (Input Tanggal Kosong ATAU Input Tanggal == Hari Ini)
+        // Live Mode AKTIF jika input filter kosong
         $isLiveMode = empty($weekInput) && empty($monthInput) && (empty($dateInput) || $dateInput == $today);
     @endphp
 
@@ -88,18 +86,49 @@
                 </div>
             </div>
 
+            {{-- MENU KANAN ATAS (THEME + USER DROPDOWN) --}}
             <div class="d-flex align-items-center gap-3">
-                <div class="theme-toggle" onclick="toggleTheme()">
+                <div class="theme-toggle" onclick="toggleTheme()" title="Ganti Tema">
                     <i class="fas fa-moon" id="theme-icon"></i>
                 </div>
-                <div class="d-flex align-items-center gap-3">
-    <form method="POST" action="{{ route('logout') }}">
-        @csrf
-        <button type="submit" class="btn btn-danger btn-sm rounded-pill px-3">
-            <i class="fas fa-sign-out-alt"></i> Keluar
-        </button>
-    </form>
-</div>
+                
+                {{-- DROPDOWN USER (PENGGANTI TOMBOL LOGOUT BIASA) --}}
+                <div class="dropdown">
+                    <button class="btn btn-white border shadow-sm rounded-pill px-3 py-2 d-flex align-items-center gap-2 dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                        <i class="fas fa-user-circle fa-lg text-primary"></i>
+                        <span class="fw-bold small d-none d-md-block">{{ auth()->user()->name }}</span>
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end shadow-lg border-0 mt-2" style="min-width: 200px;">
+                        <li><h6 class="dropdown-header text-muted text-uppercase small">Menu Pengguna</h6></li>
+                        <li>
+                            <a class="dropdown-item py-2" href="{{ route('profile.edit') }}">
+                                <i class="fas fa-user-cog me-2 text-secondary w-20"></i> Profile
+                            </a>
+                        </li>
+
+                        {{-- MENU CRUD USER (HANYA ADMIN) --}}
+                        @if($isAdmin)
+                        <li>
+                            <a class="dropdown-item py-2" href="{{ route('users.index') }}">
+                                <i class="fas fa-users-cog me-2 text-primary w-20"></i> Kelola User
+                            </a>
+                        </li>
+                        @endif
+
+                        <li><hr class="dropdown-divider"></li>
+                        
+                        {{-- TOMBOL KELUAR (MERAH) --}}
+                        <li>
+                            <form method="POST" action="{{ route('logout') }}">
+                                @csrf
+                                <button type="submit" class="dropdown-item text-danger fw-bold py-2">
+                                    <i class="fas fa-sign-out-alt me-2 w-20"></i> Keluar
+                                </button>
+                            </form>
+                        </li>
+                    </ul>
+                </div>
+
             </div>
         </div>
 
@@ -574,6 +603,8 @@
             });
         }
     </script>
+    
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 
 </html>

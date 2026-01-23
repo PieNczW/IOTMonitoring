@@ -1,8 +1,9 @@
 <?php
 
-use App\Http\Controllers\ProfileController;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\UserController;
 use App\Http\Controllers\SensorController;
+use App\Http\Controllers\ProfileController;
 
 /*
 |--------------------------------------------------------------------------
@@ -27,5 +28,13 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/export-excel', [SensorController::class, 'export'])->name('export');
 });
 
+// 4. Profil User
+Route::resource('users', UserController::class);
+
 // Load route bawaan Breeze (Login, Register, dll)
 require __DIR__.'/auth.php';
+
+// 5. Profil User
+Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
+Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
+Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
