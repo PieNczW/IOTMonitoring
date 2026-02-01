@@ -369,7 +369,7 @@
 
                             <div class="col-md-4 border-end p-3 d-flex flex-column justify-content-center">
                                 <small class="fw-bold d-block text-center text-uppercase mb-3 opacity-75"
-                                    style="letter-spacing: 1px;">SUHU (DHT22)</small>
+                                    style="letter-spacing: 1px;">SUHU </small>
                                 <div class="d-flex justify-content-between align-items-end px-2">
                                     <div class="text-start">
                                         <span class="d-block text-danger small fw-bold mb-1">MAX</span>
@@ -408,7 +408,7 @@
                             <div class="col-md-4 p-0">
                                 @php
                                     $gas = $stats['avg_gas'];
-                                    $heatIndex = $stats['heat_index_22'];
+                                    $heatIndex = $stats['heat_index_22'] ?? $stats['heat_index_11'];
 
                                     $statusText = 'AMAN';
                                     $icon = 'fa-check-circle';
