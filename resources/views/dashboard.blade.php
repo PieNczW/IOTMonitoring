@@ -318,24 +318,40 @@
                                     </div>
                                 </div>
 
-                                <div class="col-md-6">
-                                    <h6 class="text-uppercase fw-bold text-muted small mb-3">Kontrol Kipas (Manual)
-                                    </h6>
+                               <div class="col-md-6">
+                                    <h6 class="text-uppercase fw-bold text-muted small mb-3">Kontrol Kipas (Manual)</h6>
 
                                     <div id="fan-wrapper"
                                         style="{{ $setting->mode == 'auto' ? 'opacity: 0.5; pointer-events: none;' : '' }}">
-                                        <div class="btn-group" role="group">
-                                            <button type="button"
-                                                class="btn {{ $setting->fan_status == 1 ? 'btn-success' : 'btn-outline-success' }} px-4 py-2"
-                                                onclick="updateFan(1)">
-                                                <i class="fas fa-fan fa-spin me-2"></i> NYALA
-                                            </button>
-                                            <button type="button"
-                                                class="btn {{ $setting->fan_status == 0 ? 'btn-secondary' : 'btn-outline-secondary' }} px-4 py-2"
-                                                onclick="updateFan(0)">
-                                                <i class="fas fa-power-off me-2"></i> MATI
-                                            </button>
+                                        
+                                        {{-- 1. Kontrol Relay (Kipas Utama) --}}
+                                        <div class="mb-3">
+                                            <small class="d-block text-muted mb-1">Kipas Utama (Relay)</small>
+                                            <div class="btn-group w-100" role="group">
+                                                <button type="button"
+                                                    class="btn {{ $setting->fan_status == 1 ? 'btn-success' : 'btn-outline-success' }} py-2"
+                                                    onclick="updateFan(1)">
+                                                    <i class="fas fa-fan fa-spin me-2"></i> ON
+                                                </button>
+                                                <button type="button"
+                                                    class="btn {{ $setting->fan_status == 0 ? 'btn-secondary' : 'btn-outline-secondary' }} py-2"
+                                                    onclick="updateFan(0)">
+                                                    <i class="fas fa-power-off me-2"></i> OFF
+                                                </button>
+                                            </div>
                                         </div>
+
+                                        {{-- 2. Kontrol PWM (Kipas Kecil) - SLIDER BARU --}}
+                                        <div class="mb-1">
+                                            <div class="d-flex justify-content-between">
+                                                <small class="text-muted">Kipas PWM (Kecil)</small>
+                                                <small class="fw-bold text-primary"><span id="pwm-val">{{ $setting->pwm_speed ?? 0 }}</span>%</small>
+                                            </div>
+                                            <input type="range" class="form-range" min="0" max="100" 
+                                                value="{{ $setting->pwm_speed ?? 0 }}" 
+                                                id="pwmSlider" onchange="updatePwm(this.value)" oninput="document.getElementById('pwm-val').innerText = this.value">
+                                        </div>
+
                                     </div>
 
                                     <div class="mt-2">
@@ -345,8 +361,9 @@
                                                 mengontrol.
                                             </small>
                                         @else
-                                            <small class="text-muted">Status Kipas:
-                                                <strong>{{ $setting->fan_status ? 'MENYALA' : 'MATI' }}</strong></small>
+                                            <small class="text-success fw-bold">
+                                                <i class="fas fa-check-circle me-1"></i> Mode Manual Aktif
+                                            </small>
                                         @endif
                                     </div>
                                 </div>
@@ -630,6 +647,36 @@
                 .catch(error => {
                     console.error('Error:', error);
                     alert("Terjadi kesalahan koneksi.");
+                });
+        }
+    </script>
+    <script>
+    function updatePwm(val) {
+            fetch("{{ route('update.settings') }}", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "X-CSRF-TOKEN": "{{ csrf_token() }}"
+                    },
+                    body: JSON.stringify({
+                        pwm_speed: val,
+                        // Kita kirim mode manual juga untuk memastikan
+                        mode: 'manual' 
+                    })
+                })
+                .then(response => {
+                    if (!response.ok) throw new Error("HTTP error " + response.status);
+                    return response.json();
+                })
+                .then(data => {
+                    if (data.success) {
+                        console.log("PWM Updated: " + val);
+                    } else {
+                        alert("Gagal mengubah kecepatan PWM.");
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
                 });
         }
     </script>

@@ -10,5 +10,5 @@ class DeviceSetting extends Model
     use HasFactory;
     
     // Izinkan kolom ini diisi
-    protected $fillable = ['mode', 'fan_status'];
+    protected $fillable = ['mode', 'fan_status'. 'pwm_speed'];
 }

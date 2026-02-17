@@ -131,7 +131,7 @@ class SensorController extends Controller
         // Ambil Settingan Kontrol
         $setting = DeviceSetting::first();
         if (!$setting) {
-            $setting = DeviceSetting::create(['mode' => 'auto', 'fan_status' => 0]);
+            $setting = DeviceSetting::create(['mode' => 'auto', 'fan_status' => 0, 'pwm_speed' => 0]);
         }
 
         // Kita kirim variabel $last terpisah untuk View agar tidak bingung
@@ -152,7 +152,7 @@ class SensorController extends Controller
         // 2. Ambil Status Tombol Terakhir
         $setting = DeviceSetting::first();
         if (!$setting) {
-            $setting = DeviceSetting::create(['mode' => 'auto', 'fan_status' => 0]);
+            $setting = DeviceSetting::create(['mode' => 'auto', 'fan_status' => 0, 'pwm_speed' => 0]);
         }
 
         // --- [LOGIKA BARU] Update Database jika ada perintah dari Telegram ---
@@ -164,6 +164,9 @@ class SensorController extends Controller
             if ($request->has('fan_status')) {
                 $setting->fan_status = $request->fan_status;
             }
+            if ($request->has('pwm_speed')) {
+                $setting->pwm_speed = $request->pwm_speed;
+            }
             $setting->save(); // Simpan perubahan dari Telegram ke Database
         }
 
@@ -171,7 +174,8 @@ class SensorController extends Controller
         return response()->json([
             'message'      => 'Success',
             'command_mode' => $setting->mode,
-            'command_fan'  => $setting->fan_status
+            'command_fan'  => $setting->fan_status,
+            'command_pwm'  => $setting->pwm_speed
         ], 201); 
     }
 
@@ -181,15 +185,17 @@ class SensorController extends Controller
         
         $setting = DeviceSetting::first();
         if (!$setting) {
-            $setting = DeviceSetting::create(['mode' => 'auto', 'fan_status' => 0]);
+            $setting = DeviceSetting::create(['mode' => 'auto', 'fan_status' => 0, 'pwm_speed' => 0]);
         }
         
         if ($request->has('mode')) {
             $setting->mode = $request->mode;
         }
-        
         if ($request->has('fan_status')) {
             $setting->fan_status = $request->fan_status;
+        }
+        if ($request->has('pwm_speed')) {
+            $setting->pwm_speed = $request->pwm_speed;
         }
 
         $setting->save();
