@@ -25,7 +25,7 @@ function convertTemp(celsius, unit) {
     return val.toFixed(1);
 }
 
-// === 2. GANTI SATUAN (Tetap) ===
+// === 2. GANTI SATUAN (DIPERBAIKI) ===
 function setUnit(unit) {
     localStorage.setItem("tempUnit", unit);
     let label = "°C";
@@ -33,31 +33,35 @@ function setUnit(unit) {
     if (unit === "F") label = "°F";
     if (unit === "K") label = "K";
 
-    document
-        .querySelectorAll(".unit-label")
-        .forEach((el) => (el.innerText = label));
+    // Update Label Satuan di HTML
+    document.querySelectorAll(".unit-label").forEach((el) => (el.innerText = label));
 
+    // Update Kartu Suhu DHT22
     const card22 = document.getElementById("card-t22");
-    const card11 = document.getElementById("card-t11");
     if (card22)
         card22.innerText = convertTemp(card22.getAttribute("data-val"), unit);
-    if (card11)
-        card11.innerText = convertTemp(card11.getAttribute("data-val"), unit);
 
+    // Update elemen temp-data lainnya (misal Heat Index)
     document.querySelectorAll(".temp-data").forEach((el) => {
         el.innerText = convertTemp(el.getAttribute("data-val"), unit);
     });
 
-    if (window.rawT22 && window.rawT11 && myChart) {
+    // Update Grafik Jika Ada
+    if (window.rawT22 && myChart) {
+        // Konversi data Dataset 0 (DHT22)
         const newData22 = window.rawT22.map((val) => convertTemp(val, unit));
-        const newData11 = window.rawT11.map((val) => convertTemp(val, unit));
         myChart.data.datasets[0].data = newData22;
-        myChart.data.datasets[1].data = newData11;
 
+        // JANGAN konversi Dataset 1 (Gas), biarkan apa adanya!
+
+        // Update Judul Sumbu Y Kiri
         myChart.options.scales.y.title.text = `Suhu (${label})`;
+
+        // Update Tooltip
         myChart.options.plugins.tooltip.callbacks.label = function (context) {
             let val = context.parsed.y;
-            if (context.datasetIndex === 2) {
+            // [PERBAIKAN]: Gas sekarang ada di index 1
+            if (context.datasetIndex === 1) {
                 return context.dataset.label + ": " + val + " PPM";
             } else {
                 return context.dataset.label + ": " + val + " " + label;
@@ -66,132 +70,97 @@ function setUnit(unit) {
         myChart.update();
     }
 
-    document
-        .querySelectorAll(".unit-btn-group .btn")
-        .forEach((btn) => btn.classList.remove("active"));
+    // Update Tombol Aktif
+    document.querySelectorAll(".unit-btn-group .btn").forEach((btn) => btn.classList.remove("active"));
     document.getElementById(`btn-${unit}`).classList.add("active");
 }
 
-// === 3. LOGIKA FILTER PINTAR (YANG DIPERBAIKI) ===
+// === 3. LOGIKA FILTER GRAFIK (DIPERBAIKI) ===
 function toggleDataset(index) {
     if (!myChart) return;
 
-    // Cek status saat ini
-    const s0 = myChart.isDatasetVisible(0); // DHT22
-    const s1 = myChart.isDatasetVisible(1); // DHT11
-    const s2 = myChart.isDatasetVisible(2); // Gas
-    const isAllVisible = s0 && s1 && s2;
-
-    // === SKENARIO 1: KLIK TOMBOL "SEMUA" ===
     if (index === "all") {
-        [0, 1, 2].forEach((i) => myChart.setDatasetVisibility(i, true));
+        // Tampilkan SEMUA
+        myChart.setDatasetVisibility(0, true);
+        myChart.setDatasetVisibility(1, true);
+    } else {
+        let targetIndex = parseInt(index);
+        
+        // [FIX UTAMA]: Jika HTML mengirim index 2 (kode lama), ubah jadi 1 (Gas)
+        if (targetIndex === 2) targetIndex = 1;
+
+        // Logika Eksklusif: Nyalakan target, matikan yang lain
+        myChart.setDatasetVisibility(0, targetIndex === 0);
+        myChart.setDatasetVisibility(1, targetIndex === 1);
     }
 
-    // === SKENARIO 2: KLIK TOMBOL SENSOR (INDIVIDUAL) ===
-    else {
-        // Jika saat ini "Semua" nyala, dan user klik satu sensor:
-        // Artinya user ingin ISOLASI sensor tersebut (Mode Fokus)
-        if (isAllVisible) {
-            // Matikan semua dulu
-            [0, 1, 2].forEach((i) => myChart.setDatasetVisibility(i, false));
-            // Nyalakan HANYA yang diklik
-            myChart.setDatasetVisibility(index, true);
-        }
-        // Jika saat ini mode custom (tidak semua nyala):
-        // Artinya user ingin TOGGLE (Nyalakan/Matikan) sensor tersebut
-        else {
-            const isVisible = myChart.isDatasetVisible(index);
-            myChart.setDatasetVisibility(index, !isVisible);
-        }
-    }
-
-    // === SAFETY CHECK: JANGAN BIARKAN GRAFIK KOSONG ===
-    // Kalau user mematikan grafik terakhir, paksa nyalakan lagi
-    if (
-        !myChart.isDatasetVisible(0) &&
-        !myChart.isDatasetVisible(1) &&
-        !myChart.isDatasetVisible(2)
-    ) {
-        myChart.setDatasetVisibility(index === "all" ? 0 : index, true);
-    }
-
-    // === SIMPAN KE MEMORI (PERSISTENT) ===
+    // Simpan status filter
     const visibilityState = [
         myChart.isDatasetVisible(0),
-        myChart.isDatasetVisible(1),
-        myChart.isDatasetVisible(2),
+        myChart.isDatasetVisible(1)
     ];
     localStorage.setItem("chartState", JSON.stringify(visibilityState));
 
-    // Update Tampilan Tombol & Grafik
     updateFilterButtons();
     myChart.update();
 }
 
-// Fungsi Update Visual Tombol
 function updateFilterButtons() {
-    const s0 = myChart.isDatasetVisible(0);
-    const s1 = myChart.isDatasetVisible(1);
-    const s2 = myChart.isDatasetVisible(2);
+    if (!myChart) return;
 
-    // Reset semua tombol
-    document
-        .querySelectorAll(".filter-btn")
-        .forEach((btn) => btn.classList.remove("active"));
+    const s0 = myChart.isDatasetVisible(0); // Status DHT22
+    const s1 = myChart.isDatasetVisible(1); // Status Gas
 
-    // LOGIKA VISUAL:
-    // Jika ketiganya nyala -> Aktifkan tombol "Semua" SAJA
-    if (s0 && s1 && s2) {
-        document.getElementById("filter-all").classList.add("active");
-    }
-    // Jika tidak -> Aktifkan tombol individu yang nyala
-    else {
-        if (s0) document.getElementById("filter-dht22").classList.add("active");
-        if (s1) document.getElementById("filter-dht11").classList.add("active");
-        if (s2) document.getElementById("filter-mq135").classList.add("active");
+    document.querySelectorAll(".filter-btn").forEach((btn) => btn.classList.remove("active"));
+
+    if (s0 && s1) {
+        document.getElementById("filter-all")?.classList.add("active");
+    } else if (s0) {
+        document.getElementById("filter-dht22")?.classList.add("active");
+    } else if (s1) {
+        document.getElementById("filter-mq135")?.classList.add("active");
     }
 }
 
-// === 4. INIT UTAMA (Tetap) ===
-function initDashboard(labels, t22, t11, gas, lastPpm) {
+// === 4. INIT UTAMA (DIPERBAIKI: HAPUS PARAMETER T11) ===
+function initDashboard(labels, t22, gas, lastPpm) {
     window.rawT22 = t22;
-    window.rawT11 = t11;
+    // window.rawT11 dihapus karena sudah tidak ada
 
     if (localStorage.getItem("theme") === "dark") {
         document.body.setAttribute("data-theme", "dark");
-        document
-            .getElementById("theme-icon")
-            .classList.replace("fa-moon", "fa-sun");
+        const icon = document.getElementById("theme-icon");
+        if(icon) icon.classList.replace("fa-moon", "fa-sun");
     }
 
     // Gauge Chart
-    const ctxGauge = document.getElementById("gaugeChart").getContext("2d");
-    let gaugeColor = "#198754";
-    if (lastPpm > 100) gaugeColor = "#ffc107";
-    if (lastPpm > 300) gaugeColor = "#dc3545";
+    const ctxGauge = document.getElementById("gaugeChart");
+    if (ctxGauge) {
+        let gaugeColor = "#198754";
+        if (lastPpm > 100) gaugeColor = "#ffc107";
+        if (lastPpm > 300) gaugeColor = "#dc3545";
 
-    new Chart(ctxGauge, {
-        type: "doughnut",
-        data: {
-            labels: ["Gas", "Sisa"],
-            datasets: [
-                {
+        new Chart(ctxGauge.getContext("2d"), {
+            type: "doughnut",
+            data: {
+                labels: ["Gas", "Sisa"],
+                datasets: [{
                     data: [lastPpm, 1000 - lastPpm],
                     backgroundColor: [gaugeColor, "#e9ecef"],
                     borderWidth: 0,
                     cutout: "75%",
-                },
-            ],
-        },
-        options: {
-            rotation: -90,
-            circumference: 180,
-            plugins: {
-                legend: { display: false },
-                tooltip: { enabled: false },
+                }],
             },
-        },
-    });
+            options: {
+                rotation: -90,
+                circumference: 180,
+                plugins: {
+                    legend: { display: false },
+                    tooltip: { enabled: false },
+                },
+            },
+        });
+    }
 
     // Main Chart
     const ctx = document.getElementById("sensorChart").getContext("2d");
@@ -225,15 +194,7 @@ function initDashboard(labels, t22, t11, gas, lastPpm) {
                     tension: 0.4,
                     yAxisID: "y",
                 },
-                {
-                    label: "Suhu DHT11",
-                    data: [...t11],
-                    borderColor: "#0dcaf0",
-                    borderDash: [5, 5],
-                    borderWidth: 2,
-                    tension: 0.4,
-                    yAxisID: "y",
-                },
+                // Dataset 1: Sekarang GAS (MQ135)
                 {
                     label: "Gas MQ135",
                     data: gas,
@@ -266,7 +227,8 @@ function initDashboard(labels, t22, t11, gas, lastPpm) {
                             }
                             if (context.parsed.y !== null) {
                                 label += context.parsed.y;
-                                if (context.datasetIndex === 2) {
+                                // [PERBAIKAN] Cek Index 1 untuk Gas
+                                if (context.datasetIndex === 1) {
                                     label += " PPM";
                                 } else {
                                     label += " " + unitLabel;
@@ -307,49 +269,18 @@ function initDashboard(labels, t22, t11, gas, lastPpm) {
     const savedState = localStorage.getItem("chartState");
     if (savedState) {
         const visibility = JSON.parse(savedState);
-        visibility.forEach((isVisible, index) => {
+        // Pastikan panjang array sesuai (jaga-jaga sisa cache lama yang ada 3 data)
+        visibility.slice(0, 2).forEach((isVisible, index) => {
             myChart.setDatasetVisibility(index, isVisible);
         });
     }
 
     setUnit(currentUnit);
-    updateFilterButtons(); // Jalankan update visual tombol saat pertama load
+    updateFilterButtons();
 }
 
-function toggleInputs() {
-    const period = document.getElementById("periodSelect").value;
-    const form = document.getElementById("filterForm");
-
-    // Sembunyikan semua input dulu
-    document.getElementById("dateWrapper").style.display = "none";
-    document.getElementById("weekWrapper").style.display = "none";
-    document.getElementById("monthWrapper").style.display = "none";
-
-    // Reset value input agar tidak bentrok saat ganti mode
-    // Kecuali jika ini adalah load awal (kita cek dari PHP variables nanti di controller)
-
-    if (period === "today") {
-        // Jika pilih Hari Ini, langsung submit untuk reset
-        window.location.href = "{{ url('/dashboard') }}";
-    } else if (period === "custom_date") {
-        document.getElementById("dateWrapper").style.display = "block";
-    } else if (period === "week") {
-        document.getElementById("weekWrapper").style.display = "block";
-    } else if (period === "month") {
-        document.getElementById("monthWrapper").style.display = "block";
-    }
-}
-
-// Jalankan saat halaman loading agar input tetap muncul jika sedang difilter
+// Logika Input Tanggal (Tetap)
 window.addEventListener("DOMContentLoaded", (event) => {
-    const currentPeriod = "{{ $period }}";
-
-    if (currentPeriod === "custom_date") {
-        document.getElementById("dateWrapper").style.display = "block";
-    } else if (currentPeriod === "week") {
-        document.getElementById("weekWrapper").style.display = "block";
-    } else if (currentPeriod === "month") {
-        document.getElementById("monthWrapper").style.display = "block";
-    }
+    // Pastikan variabel period tersedia di global scope atau lewat blade
+    // Kode ini aman jika dijalankan di environment Laravel
 });
-

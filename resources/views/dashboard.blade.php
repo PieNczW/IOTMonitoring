@@ -211,71 +211,84 @@
         <div class="row mb-4 g-3">
             @if ($last)
                 <div class="col-md-4">
-                    <div class="card bg-primary text-white p-3 h-100"
-                        style="background: linear-gradient(45deg, #0d6efd, #0a58ca);">
-                        <div class="d-flex justify-content-between align-items-start">
-                            <div>
-                                <h6 class="text-white-50 text-uppercase fw-bold mb-1">DHT22 (Utama)</h6>
-                                <h1 class="display-4 fw-bold mb-0">
-                                    <span id="card-t22"
-                                        data-val="{{ $last->temp22 }}">{{ $last->temp22 }}</span><span
-                                        class="fs-4 unit-label">°C</span>
-                                </h1>
-                            </div>
-                            <i class="fas fa-temperature-high sensor-card-icon"></i>
-                        </div>
-                        <div class="mt-3 pt-3 border-top border-white-50">
-                            <div class="d-flex justify-content-between align-items-center">
-                                <span><i class="fas fa-tint"></i> Kelembapan: {{ $last->hum22 }}%</span>
-                                <span class="badge bg-white text-primary bg-opacity-75" title="Heat Index">
-                                    <i class="fas fa-running"></i> Terasa: <span class="temp-data"
-                                        data-val="{{ $stats['heat_index_22'] }}">{{ $stats['heat_index_22'] }}</span><span
-                                        class="unit-label">°C</span>
-                                </span>
-                            </div>
-                        </div>
-                    </div>
+    <div class="card shadow-sm border-start border-4 border-danger h-100">
+        <div class="card-body text-center d-flex flex-column justify-content-center">
+            <div class="mb-2 text-danger">
+                <i class="fas fa-thermometer-half fa-3x"></i>
+            </div>
+            <h5 class="card-title text-muted text-uppercase small fw-bold ls-1">Suhu Ruangan</h5>
+            
+            {{-- DATA SUHU --}}
+            <h2 class="display-4 fw-bold text-dark mb-0">
+                <span id="card-t22" class="temp-data" data-val="{{ $last ? $last->temp22 : 0 }}">
+                    {{ $last ? $last->temp22 : 0 }}
+                </span>
+                <small class="fs-4 text-muted unit-label" style="font-weight: 400;">°C</small>
+            </h2>
+            
+            {{-- HEAT INDEX (TERASA SEPERTI) - Tetap di bawah suhu --}}
+            <div class="mt-3">
+                <div class="d-inline-block px-3 py-1 rounded-pill bg-light border text-muted small">
+                    <i class="fas fa-sun text-warning me-1"></i>
+                    Terasa: 
+                    <strong>
+                        <span class="temp-data" data-val="{{ $stats['heat_index_22'] }}">
+                            {{ $stats['heat_index_22'] }}
+                        </span>
+                        <span class="unit-label">°C</span>
+                    </strong>
                 </div>
+            </div>
+        </div>
+    </div>
+</div>
 
+{{-- CARD 2: KELEMBAPAN (DHT22) --}}
+<div class="col-md-4">
+    <div class="card shadow-sm border-start border-4 border-info h-100">
+        <div class="card-body text-center d-flex flex-column justify-content-center">
+            <div class="mb-2 text-info">
+                <i class="fas fa-tint fa-3x"></i>
+            </div>
+            <h5 class="card-title text-muted text-uppercase small fw-bold ls-1">Kelembapan</h5>
+            
+            {{-- DATA KELEMBAPAN --}}
+            <h2 class="display-4 fw-bold text-dark mb-0">
+                <span id="card-h22" data-val="{{ $last ? $last->hum22 : 0 }}">
+                    {{ $last ? $last->hum22 : 0 }}
+                </span>
+                <small class="fs-4 text-muted" style="font-weight: 400;">%</small>
+            </h2>
+
+            {{-- Info Sensor --}}
+            <div class="mt-3">
+                <small class="text-muted fst-italic">Sensor: DHT22 </small>
+            </div>
+        </div>
+    </div>
+</div>
                 <div class="col-md-4">
-                    <div class="card bg-info text-white p-3 h-100"
-                        style="background: linear-gradient(45deg, #0dcaf0, #0aa2c0);">
-                        <div class="d-flex justify-content-between align-items-start">
-                            <div>
-                                <h6 class="text-white-50 text-uppercase fw-bold mb-1">DHT11 (Sekunder)</h6>
-                                <h1 class="display-4 fw-bold mb-0">
-                                    <span id="card-t11"
-                                        data-val="{{ $last->temp11 }}">{{ $last->temp11 }}</span><span
-                                        class="fs-4 unit-label">°C</span>
-                                </h1>
+                    <div class="card shadow-sm border-start border-4 border-warning h-100">
+                        <div class="card-body text-center">
+                            <div class="mb-2 text-warning">
+                                <i class="fas fa-wind fa-3x"></i>
                             </div>
-                            <i class="fas fa-thermometer-half sensor-card-icon"></i>
-                        </div>
-                        <div class="mt-3 pt-3 border-top border-white-50">
-                            <div class="d-flex justify-content-between align-items-center">
-                                <span><i class="fas fa-tint"></i> Kelembapan: {{ $last->hum11 }}%</span>
-                                <span class="badge bg-white text-info bg-opacity-75" title="Heat Index">
-                                    <i class="fas fa-running"></i> Terasa: <span class="temp-data"
-                                        data-val="{{ $stats['heat_index_11'] }}">{{ $stats['heat_index_11'] }}</span><span
-                                        class="unit-label">°C</span>
-                                </span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-md-4">
-                    <div class="card text-white p-3 h-100"
-                        style="background: {{ $last->ppm > 300 ? 'linear-gradient(45deg, #dc3545, #b02a37)' : ($last->ppm > 100 ? 'linear-gradient(45deg, #ffc107, #d39e00)' : 'linear-gradient(45deg, #198754, #146c43)') }}">
-                        <div class="d-flex justify-content-between align-items-start">
-                            <div>
-                                <h6 class="text-white-50 text-uppercase fw-bold mb-1">Kualitas Udara</h6>
-                                <h1 class="display-4 fw-bold mb-0">{{ $last->ppm }} <span
-                                        class="fs-5">PPM</span></h1>
-                            </div>
-                            <i class="fas fa-wind sensor-card-icon"></i>
-                        </div>
-                        <div class="mt-3 pt-3 border-top border-white-50">
-                            <strong>{{ $last->ppm > 300 ? 'BAHAYA ☠️' : ($last->ppm > 100 ? 'WASPADA ⚠️' : 'AMAN ✅') }}</strong>
+                            <h5 class="card-title text-muted">Kualitas Udara (Gas)</h5>
+                            <h2 class="display-4 fw-bold text-dark">
+                                {{ $last ? $last->ppm : 0 }} <span class="fs-4">PPM</span>
+                            </h2>
+                            
+                            @php
+                                $ppm = $last ? $last->ppm : 0;
+                                $statusUdara = 'Aman';
+                                $badgeClass = 'bg-success';
+                                if($ppm > 500) { $statusUdara = 'BAHAYA'; $badgeClass = 'bg-danger'; }
+                                elseif($ppm > 100) { $statusUdara = 'Waspada'; $badgeClass = 'bg-warning text-dark'; }
+                            @endphp
+
+                            <span class="badge {{ $badgeClass }} rounded-pill mt-2 px-3">
+                                Status: {{ $statusUdara }}
+                            </span>
                         </div>
                     </div>
                 </div>
@@ -447,7 +460,7 @@
                                         $bgClass = 'bg-warning';
                                         $blockTextClass = 'text-dark';
                                         $badgeColor = 'bg-dark text-warning';
-                                        $detail = $heatIndex >= 36 ? 'Hari Panas / Tidak Nyaman' : 'Udara Kotor';
+                                        $detail = $heatIndex >= 36 ? 'Ruangan Panas' : 'Udara Kotor';
                                     } elseif ($heatIndex >= 32) {
                                         $statusText = 'WASPADA';
                                         $icon = 'fa-temperature-high';
@@ -504,8 +517,7 @@
                         onclick="toggleDataset('all')">Semua</button>
                     <button id="filter-dht22" class="filter-btn dht22" onclick="toggleDataset(0)"><i
                             class="fas fa-temperature-high me-1"></i>DHT22</button>
-                    <button id="filter-dht11" class="filter-btn dht11" onclick="toggleDataset(1)"><i
-                            class="fas fa-thermometer-half me-1"></i>DHT11</button>
+                   
                     <button id="filter-mq135" class="filter-btn mq135" onclick="toggleDataset(2)"><i
                             class="fas fa-wind me-1"></i>Gas</button>
                 </div>
@@ -527,7 +539,7 @@
                                 <tr>
                                     <th class="py-3">Waktu</th>
                                     <th>DHT22</th>
-                                    <th>DHT11</th>
+                                    
                                     <th>Gas (PPM)</th>
                                 </tr>
                             </thead>
@@ -539,9 +551,7 @@
                                         <td><span class="badge bg-primary rounded-pill"><span class="temp-data"
                                                     data-val="{{ $d->temp22 }}">{{ $d->temp22 }}</span> <span
                                                     class="unit-label">°C</span></span></td>
-                                        <td><span class="badge bg-info text-dark rounded-pill"><span class="temp-data"
-                                                    data-val="{{ $d->temp11 }}">{{ $d->temp11 }}</span> <span
-                                                    class="unit-label">°C</span></span></td>
+                                        
                                         <td class="fw-bold {{ $d->ppm > 300 ? 'text-danger' : 'text-success' }}">
                                             {{ $d->ppm }}</td>
                                     </tr>
@@ -565,12 +575,12 @@
             $data->pluck('created_at')->map(fn($d) => $d->timezone('Asia/Jakarta')->format($isLiveMode ? 'H:i:s' : 'd M H:i')),
         ) !!};
         const t22 = {!! json_encode($data->pluck('temp22')) !!};
-        const t11 = {!! json_encode($data->pluck('temp11')) !!};
+        // const t11 = {!! json_encode($data->pluck('temp11')) !!};
         const gas = {!! json_encode($data->pluck('ppm')) !!};
         const lastPpm = {{ $stats['last_ppm'] }};
 
         window.onload = function() {
-            initDashboard(labels, t22, t11, gas, lastPpm);
+            initDashboard(labels, t22, gas, lastPpm);
         };
     </script>
     <script src="{{ asset('js/dashboard.js') }}"></script>
@@ -580,14 +590,14 @@
             $data->pluck('created_at')->map(fn($d) => $d->timezone('Asia/Jakarta')->format($isLiveMode ? 'H:i:s' : 'd M H:i')),
         ) !!};
         const t22 = {!! json_encode($data->pluck('temp22')) !!};
-        const t11 = {!! json_encode($data->pluck('temp11')) !!};
+        // const t11 = {!! json_encode($data->pluck('temp11')) !!};
         const gas = {!! json_encode($data->pluck('ppm')) !!};
         const lastPpm = {{ $stats['last_ppm'] ?? 0 }}; // Tambah null coalescing operator biar aman
 
         window.onload = function() {
             // Pastikan fungsi ini ada di dashboard.js untuk render grafik
             if (typeof initDashboard === 'function') {
-                initDashboard(labels, t22, t11, gas, lastPpm);
+                initDashboard(labels, t22,  gas, lastPpm);
             }
         };
     </script>

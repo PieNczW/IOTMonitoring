@@ -14,8 +14,8 @@ class SensorData extends Model
     protected $fillable = [
         'temp22',
         'hum22',
-        'temp11',
-        'hum11',
-        'ppm'
+        'ppm',
+        'temp11', 
+        'hum11'
     ];
 }

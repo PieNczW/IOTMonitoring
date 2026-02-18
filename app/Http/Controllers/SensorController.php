@@ -23,8 +23,13 @@ class SensorController extends Controller
             'ppm'    => 'required|numeric',
         ]);
 
-        // 2. Simpan Data Sensor ke Database
-        $sensor = SensorData::create($request->all());
+        // Siapkan data & suntikkan nilai dummy untuk DHT11
+        $data = $request->all();
+        $data['temp11'] = 0; 
+        $data['hum11']  = 0;
+
+        // 2. Simpan Data Sensor ke Database (PAKAI VARIABEL $data)
+        $sensor = SensorData::create($data); // <--- UBAH INI
 
         // 3. Ambil Settingan Terakhir dari Database
         $setting = DeviceSetting::first();
@@ -33,25 +38,14 @@ class SensorController extends Controller
         }
 
         // 4. LOGIKA SINKRONISASI DARI TELEGRAM (ESP) -> WEB
-        // Jika ESP mengirim flag 'update_db' = 1, berarti ada perubahan dari Telegram.
-        // Kita update database web agar sinkron dengan perintah Telegram.
         if ($request->has('update_db') && $request->update_db == 1) {
-             if ($request->has('mode')) {
-                 $setting->mode = $request->mode;
-             }
-             if ($request->has('fan_status')) {
-                 $setting->fan_status = $request->fan_status;
-             }
-             if ($request->has('pwm_speed')) {
-                 $setting->pwm_speed = $request->pwm_speed;
-             }
+             if ($request->has('mode')) $setting->mode = $request->mode;
+             if ($request->has('fan_status')) $setting->fan_status = $request->fan_status;
+             if ($request->has('pwm_speed')) $setting->pwm_speed = $request->pwm_speed;
              $setting->save();
         }
 
-        // 5. KIRIM BALIKAN KE ESP (Respon JSON)
-        // [PERBAIKAN PENTING]: 
-        // Jika mode sedang AUTO, jangan kirim nilai PWM manual ke ESP.
-        // Kirim 0 agar ESP tidak "terjebak" membaca nilai slider lama.
+        // 5. KIRIM BALIKAN KE ESP
         $pwmToSend = ($setting->mode == 'auto') ? 0 : $setting->pwm_speed;
 
         return response()->json([
@@ -59,7 +53,7 @@ class SensorController extends Controller
             'data'         => $sensor,
             'command_mode' => $setting->mode,
             'command_fan'  => $setting->fan_status,
-            'command_pwm'  => $pwmToSend // <--- Nilai ini sudah aman dari konflik Auto
+            'command_pwm'  => $pwmToSend 
         ], 201);
     }
 
@@ -159,14 +153,14 @@ class SensorController extends Controller
         $stats = [
             'max_temp' => 0, 'min_temp' => 0, 'avg_temp' => 0, 
             'max_gas' => 0, 'avg_gas' => 0, 'last_ppm' => 0,
-            'heat_index_22' => 0, 'heat_index_11' => 0
+            'heat_index_22' => 0, 
         ];
 
         if ($data->count() > 0) {
             $statsQuery = SensorData::whereBetween('created_at', [$startDate, $endDate]);
             if ($statsQuery->count() > 0) {
-                $stats['max_temp'] = max($statsQuery->max('temp22'), $statsQuery->max('temp11'));
-                $stats['min_temp'] = min($statsQuery->min('temp22'), $statsQuery->min('temp11'));
+                $stats['max_temp'] = $statsQuery->max('temp22');
+                $stats['min_temp'] = $statsQuery->min('temp22');
                 $stats['avg_temp'] = round($statsQuery->avg('temp22'), 1);
                 $stats['max_gas']  = $statsQuery->max('ppm');
                 $stats['avg_gas']  = round($statsQuery->avg('ppm'), 1);
@@ -177,8 +171,8 @@ class SensorController extends Controller
         if ($last) {
             $T = $last->temp22; $H = $last->hum22;
             $stats['heat_index_22'] = round($T + 0.5555 * (($H/100 * 6.105 * exp(17.27 * $T / (237.7 + $T))) - 10), 1);
-            $T11 = $last->temp11; $H11 = $last->hum11;
-            $stats['heat_index_11'] = round($T11 + 0.5555 * (($H11/100 * 6.105 * exp(17.27 * $T11 / (237.7 + $T11))) - 10), 1);
+            // $T11 = $last->temp11; $H11 = $last->hum11;
+            // $stats['heat_index_11'] = round($T11 + 0.5555 * (($H11/100 * 6.105 * exp(17.27 * $T11 / (237.7 + $T11))) - 10), 1);
         }
 
         // Ambil Settingan Kontrol
